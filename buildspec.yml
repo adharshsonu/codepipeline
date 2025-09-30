@@ -4,50 +4,37 @@ env:
   variables:
     AWS_ACCOUNT_ID: "612565767098"
     AWS_DEFAULT_REGION: "ap-south-1"
-    DOCKER_USERNAME: "AWS"
-    PROJECT_NAME: "ror-app"
     RAILS_REPO: "rails"
     NGINX_REPO: "nginx"
+    PROJECT_NAME: "ror-app"
 
 phases:
   pre_build:
     commands:
-      - echo "Checking Docker installation..."
-      - |
-        if ! command -v docker &> /dev/null; then
-          echo "Docker not found, installing..."
-          yum update -y
-          yum install -y docker
-          service docker start
-          usermod -a -G docker ec2-user
-        fi
-      - echo "Logging in to ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username $DOCKER_USERNAME --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - echo "Pre-build phase complete"
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
   build:
     commands:
       - echo "Building Docker images..."
       - docker build -t $RAILS_REPO -f docker/app/Dockerfile .
       - docker build -t $NGINX_REPO -f docker/nginx/Dockerfile .
-      - echo "Docker build phase complete"
 
   post_build:
     commands:
-      - echo "Tagging and pushing Docker images to ECR..."
+      - echo "Pushing Docker images to ECR..."
       - docker tag $RAILS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
       - docker tag $NGINX_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - echo "Docker images pushed successfully"
-      - echo "Creating imagedefinitions.json for ECS..."
+      - echo "Creating imagedefinitions.json..."
       - printf '[{"name":"%s","imageUri":"%s"},{"name":"%s","imageUri":"%s"}]' \
           $RAILS_REPO \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest \
           $NGINX_REPO \
           $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest \
         > imagedefinitions.json
-      - echo "imagedefinitions.json created"
 
 artifacts:
   files:
