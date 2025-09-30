@@ -4,7 +4,6 @@ env:
   variables:
     AWS_ACCOUNT_ID: "612565767098"
     AWS_DEFAULT_REGION: "ap-south-1"
-    PROJECT_NAME: "ror-app"
     RAILS_REPO: "rails"
     NGINX_REPO: "nginx"
     PROJECT_NAME: "ror-app"
@@ -19,32 +18,33 @@ phases:
       - service docker start
       - echo Logging in to Amazon ECR...
       - aws --version
-      - echo "Docker login to ECR"
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
   pre_build:
     commands:
       - echo Build started on `date`
-      - echo "Creating ECR repositories if not exist..."
+      - echo "Creating ECR repositories if they don't exist..."
       - aws ecr describe-repositories --repository-names "$RAILS_REPO" || aws ecr create-repository --repository-name "$RAILS_REPO"
       - aws ecr describe-repositories --repository-names "$NGINX_REPO" || aws ecr create-repository --repository-name "$NGINX_REPO"
       - echo "Fetching latest Git commit hash..."
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
       - echo "Image tag: $IMAGE_TAG"
 
   build:
     commands:
-      - echo "Building Docker images..."
+      - echo "Building Rails Docker image..."
       - docker build -t $RAILS_REPO:latest -f Dockerfile .
       - docker tag $RAILS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:$IMAGE_TAG
+      - echo "Building Nginx Docker image..."
       - docker build -t $NGINX_REPO:latest -f docker/nginx/Dockerfile .
       - docker tag $NGINX_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo "Pushing Docker images to ECR..."
+      - echo "Pushing Rails image..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:$IMAGE_TAG
+      - echo "Pushing Nginx image..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:$IMAGE_TAG
       - echo "Build completed on `date`"
 
