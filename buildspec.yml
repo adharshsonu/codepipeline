@@ -41,10 +41,9 @@ phases:
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - echo "Docker Images have been pushed successfully"
       - echo "Creating imagedefinitions.json file..."
-      - printf '[{"name":"rails","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"},{"name":"nginx","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]' \
-        "$AWS_ACCOUNT_ID" "$AWS_DEFAULT_REGION" "$RAILS_REPO" \
-        "$AWS_ACCOUNT_ID" "$AWS_DEFAULT_REGION" "$NGINX_REPO" > imagedefinitions.json
-
+      - printf '[{"name":"rails","imageUri":"%s.dkr.ecr.%s.amazonaws.com/rails:latest"},{"name":"nginx","imageUri":"%s.dkr.ecr.%s.amazonaws.com/nginx:latest"}]' \
+        "$AWS_ACCOUNT_ID" "$AWS_DEFAULT_REGION" \
+        "$AWS_ACCOUNT_ID" "$AWS_DEFAULT_REGION" > imagedefinitions.json
 artifacts:
   files:
     - imagedefinitions.json
