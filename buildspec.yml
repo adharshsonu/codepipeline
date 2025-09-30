@@ -7,41 +7,47 @@ env:
     PROJECT_NAME: "ror-app"
     RAILS_REPO: "rails"
     NGINX_REPO: "nginx"
+    PROJECT_NAME: "ror-app"
 
 phases:
   install:
+    runtime-versions:
+      ruby: 2.6
     commands:
-      - echo "Installing dependencies..."
-      - yum install -y jq
+      - echo Installing dependencies...
+      - yum install -y docker
+      - service docker start
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - echo "Docker login to ECR"
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
-      - echo "Checking if ECR repositories exist..."
-      - |
-        aws ecr describe-repositories --repository-names $RAILS_REPO || \
-        aws ecr create-repository --repository-name $RAILS_REPO
-      - |
-        aws ecr describe-repositories --repository-names $NGINX_REPO || \
-        aws ecr create-repository --repository-name $NGINX_REPO
+      - echo Build started on `date`
+      - echo "Creating ECR repositories if not exist..."
+      - aws ecr describe-repositories --repository-names "$RAILS_REPO" || aws ecr create-repository --repository-name "$RAILS_REPO"
+      - aws ecr describe-repositories --repository-names "$NGINX_REPO" || aws ecr create-repository --repository-name "$NGINX_REPO"
+      - echo "Fetching latest Git commit hash..."
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - echo "Image tag: $IMAGE_TAG"
 
   build:
     commands:
       - echo "Building Docker images..."
-      - docker build -t $PROJECT_NAME-rails ./ror-app
-      - docker tag $PROJECT_NAME-rails:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
-      - docker build -t $PROJECT_NAME-nginx ./nginx
-      - docker tag $PROJECT_NAME-nginx:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
+      - docker build -t $RAILS_REPO:latest -f Dockerfile .
+      - docker tag $RAILS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:$IMAGE_TAG
+      - docker build -t $NGINX_REPO:latest -f docker/nginx/Dockerfile .
+      - docker tag $NGINX_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:$IMAGE_TAG
 
   post_build:
     commands:
       - echo "Pushing Docker images to ECR..."
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
-      - echo "Build and push completed on `date`"
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:$IMAGE_TAG
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:$IMAGE_TAG
+      - echo "Build completed on `date`"
 
 artifacts:
   files:
     - '**/*'
-  discard-paths: yes
