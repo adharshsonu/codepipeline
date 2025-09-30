@@ -1,0 +1,8 @@
+<% if @post.errors.any? %>
+$("#postFormModal").modal('hide');
+$('#displayModals').html("<%= j render 'form' %>")
+$("#postFormModal").modal('show');
+$('#flash-message').html("<%= j render 'layouts/shared/alert' %>")
+<% else %>
+window.location.reload()
+<% end %>

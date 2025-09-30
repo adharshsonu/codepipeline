@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: ${DB_NAME:-myapp_db}
+      POSTGRES_USER: ${DB_USERNAME:-myapp_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  rails:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    environment:
+      RAILS_ENV: development
+      DB_HOSTNAME: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-myapp_db}
+      DB_USERNAME: ${DB_USERNAME:-myapp_user}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      PORT: 3000
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - rails
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,12 @@
+<div class="row mt-4">
+  <div class="col-sm">
+    <%= link_to 'New Post', new_post_path, class: "btn btn-primary", remote: true %>
+  </div>
+</div>
+<div class="row">
+  <div class="col-sm">
+    <%= render partial: 'posts' %>
+  </div>
+</div>
+
+<%== pagy_bootstrap_nav(@pagy) %>

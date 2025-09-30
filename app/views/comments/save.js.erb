@@ -1,0 +1,8 @@
+<% if @comment.errors.any? %>
+$("#commentFormModal").modal('hide');
+$('#displayModals').html("<%= j render 'form' %>")
+$("#commentFormModal").modal('show');
+$('#flash-message').html("<%= j render 'layouts/shared/alert' %>")
+<% else %>
+window.location.reload()
+<% end %>

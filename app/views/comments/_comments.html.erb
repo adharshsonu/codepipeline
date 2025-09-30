@@ -1,0 +1,24 @@
+<table class="table mt-4">
+  <thead>
+  <tr>
+    <th scope="col">Commented By</th>
+    <th scope="col">Comment</th>
+    <th scope="col">Commented At</th>
+    <th scope="col"></th>
+    <th scope="col"></th>
+  </tr>
+  </thead>
+  <tbody>
+  <% @comments.each do |comment| %>
+    <tr>
+      <td><%= comment&.user&.username&.titleize %></td>
+      <td><%= comment.content %></td>
+      <td><%= time_ago_in_words(comment.created_at) %> ago</td>
+      <% if current_user.id == comment.user_id %>
+        <td><%= link_to "Edit", edit_post_comment_path(@post, comment), class: "btn btn-secondary", remote: true %> </td>
+        <td><%= link_to "Delete", post_comment_path(@post, comment), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %> </td>
+      <% end %>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
