@@ -11,8 +11,18 @@ env:
 phases:
   pre_build:
     commands:
-      - echo "Testing AWS CLI identity..."
-      - aws sts get-caller-identity
+      - echo "Installing Docker if not available..."
+      # Docker is usually pre-installed on CodeBuild, but verify
+      - |
+        if ! command -v docker &> /dev/null; then
+          echo "Docker not found, installing..."
+          yum update -y
+          yum install -y docker
+          service docker start
+          usermod -a -G docker ec2-user
+        fi
+      # Optional: Docker Hub login (set DOCKER_USERNAME and DOCKER_PASSWORD in CodeBuild env variables if you use it)
+      - if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin; fi
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
@@ -24,20 +34,16 @@ phases:
 
   post_build:
     commands:
-      - echo "Pushing Docker images to ECR..."
+      - echo "Pushing Docker images..."
       - docker tag $RAILS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
       - docker tag $NGINX_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
-      - echo "Docker images pushed successfully"
-      - echo "Creating imagedefinitions.json..."
-      - printf '[{"name":"%s","imageUri":"%s"},{"name":"%s","imageUri":"%s"}]' \
-          $RAILS_REPO \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest \
-          $NGINX_REPO \
-          $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest \
-        > imagedefinitions.json
+      - echo "Docker images pushed successfully!"
+      - echo "Creating imagedefinitions.json file..."
+      - printf '[{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"},{"name":"%s","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]' \
+        "$RAILS_REPO" "$AWS_ACCOUNT_ID" "$AWS_DEFAULT_REGION" "$RAILS_REPO" \
+        "$NGINX_REPO" "$AWS_ACCOUNT_ID" "$AWS_DEFAULT_REGION" "$NGINX_REPO" > imagedefinitions.json
 
 artifacts:
-  files:
-    - imagedefinitions.json
+  files: imagedefinitions.json
