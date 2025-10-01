@@ -106,7 +106,7 @@ resource "aws_ecs_task_definition" "this" {
 
   container_definitions = jsonencode([
     {
-      name      = "rails_app",
+      name      = "rails",
       image     = var.ecr_ror_image,
       essential = true,
       portMappings = [{ containerPort = 3000, protocol = "tcp" }],
@@ -132,7 +132,7 @@ resource "aws_ecs_task_definition" "this" {
       image     = var.ecr_nginx_image,
       essential = true,
       portMappings = [{ containerPort = 80, protocol = "tcp" }],
-      dependsOn = [{ containerName = "rails_app", condition = "START" }],
+      dependsOn = [{ containerName = "rails", condition = "START" }],
       logConfiguration = {
         logDriver = "awslogs",
         options = {

@@ -60,3 +60,8 @@ variable "aws_region" {
   type        = string
   default     = "us-east-1"
 }
+variable "key_name" {
+  description = "SSH key pair name for EC2 instances (optional)"
+  type        = string
+  default     = null
+}
