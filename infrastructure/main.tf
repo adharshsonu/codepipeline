@@ -57,3 +57,26 @@ module "ecs" {
   task_cpu           = var.task_cpu
   task_memory        = var.task_memory
 }
+
+# CodePipeline Module with GitHub Integration
+module "codepipeline" {
+  source          = "./modules/codepipeline"
+  project_name    = var.project_name
+  aws_region      = var.aws_region
+  aws_account_id  = "612565767098" # Your AWS account ID
+
+  # GitHub configuration
+  github_owner      = "adharshsonu" # Replace with your GitHub username/organization
+  github_repo       = "codepipeline" # Replace with your repository name
+  github_branch     = "main"
+  github_oauth_token = var.github_oauth_token # Set this in your terraform.tfvars
+
+  # ECR configuration
+  rails_repo_name = "rails"
+  nginx_repo_name = "nginx"
+
+  # ECS configuration
+  ecs_cluster_name           = module.ecs.ecs_cluster_name
+  ecs_service_name           = module.ecs.ecs_service_name
+  ecs_task_execution_role_arn = module.ecs.ecs_task_execution_role_arn
+}

@@ -96,3 +96,10 @@ variable "key_name" {
   type        = string
   default     = "" # It's good practice to provide a default, even if empty
 }
+
+# GitHub OAuth Token for CodePipeline
+variable "github_oauth_token" {
+  description = "GitHub OAuth token for CodePipeline access"
+  type        = string
+  sensitive   = true
+}
