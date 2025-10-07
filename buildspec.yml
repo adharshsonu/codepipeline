@@ -12,6 +12,7 @@ phases:
   pre_build:
     commands:
       - echo "Installing Docker if not available..."
+      # Docker is usually pre-installed on CodeBuild, but verify
       - |
         if ! command -v docker &> /dev/null; then
           echo "Docker not found, installing..."
@@ -20,35 +21,27 @@ phases:
           service docker start
           usermod -a -G docker ec2-user
         fi
+      # Optional: Docker Hub login
+      - if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin; fi
       - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
   build:
     commands:
       - echo "Building Docker images..."
-      - echo "Current directory: $(pwd)"
-      - echo "Contents of current directory:"
-      - ls -la
-      - echo "Building Rails image..."
       - docker build -t $RAILS_REPO -f docker/app/Dockerfile .
-    finally:
-      - echo "Docker build phase finished. Listing available images:"
-      - docker images
+      - docker build -t $NGINX_REPO -f docker/nginx/Dockerfile .
 
   post_build:
     commands:
       - echo "Pushing Docker Images"
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 612565767098.dkr.ecr.us-east-1.amazonaws.com
       - docker tag $RAILS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
-      - echo "Building and pushing Nginx image..."
-      - docker build -t $NGINX_REPO -f docker/nginx/Dockerfile .
       - docker tag $NGINX_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - echo "Docker Images have been pushed successfully"
       - echo "Creating imagedefinitions.json file..."
-      - printf '[{"name":"rails","imageUri":"%s"},{"name":"nginx","imageUri":"%s"}]' $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest > imagedefinitions.json
-      - echo "Contents of imagedefinitions.json:"
-      - cat imagedefinitions.json
+      - printf '[{"name":"rails","imageUri":"612565767098.dkr.ecr.us-east-1.amazonaws.com/rails:latest"},{"name":"nginx","imageUri":"612565767098.dkr.ecr.us-east-1.amazonaws.com/nginx:latest"}]' > imagedefinitions.json
 
 artifacts:
   files:
