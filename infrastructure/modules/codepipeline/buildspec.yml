@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    AWS_ACCOUNT_ID: "612565767098"
+    AWS_ACCOUNT_ID: "171861525916"
     AWS_DEFAULT_REGION: "us-east-1"
     RAILS_REPO: "rails"
     NGINX_REPO: "nginx"
@@ -34,14 +34,14 @@ phases:
   post_build:
     commands:
       - echo "Pushing Docker Images"
-      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 612565767098.dkr.ecr.us-east-1.amazonaws.com
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 171861525916.dkr.ecr.us-east-1.amazonaws.com
       - docker tag $RAILS_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$RAILS_REPO:latest
       - docker tag $NGINX_REPO:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$NGINX_REPO:latest
       - echo "Docker Images have been pushed successfully"
       - echo "Creating imagedefinitions.json file..."
-      - printf '[{"name":"rails","imageUri":"612565767098.dkr.ecr.us-east-1.amazonaws.com/rails:latest"},{"name":"nginx","imageUri":"612565767098.dkr.ecr.us-east-1.amazonaws.com/nginx:latest"}]' > imagedefinitions.json
+      - printf '[{"name":"rails","imageUri":"171861525916.dkr.ecr.us-east-1.amazonaws.com/rails:latest"},{"name":"nginx","imageUri":"171861525916.dkr.ecr.us-east-1.amazonaws.com/nginx:latest"}]' > imagedefinitions.json
 
 artifacts:
   files:

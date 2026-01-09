@@ -77,7 +77,7 @@ resource "aws_iam_instance_profile" "ecs_instance_profile" {
 resource "aws_launch_template" "ecs_lt" {
   name_prefix   = "${var.project_name}-ecs-"
   image_id      = data.aws_ami.ecs_optimized.id
-  instance_type = "t3.medium"
+  instance_type = "t3.micro"
   #key_name      = var.key_name
 
   iam_instance_profile {
