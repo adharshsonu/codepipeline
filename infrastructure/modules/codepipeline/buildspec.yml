@@ -4,8 +4,8 @@ env:
   variables:
     AWS_ACCOUNT_ID: "171861525916"
     AWS_DEFAULT_REGION: "us-east-1"
-    RAILS_REPO: "rails"
-    NGINX_REPO: "nginx"
+    RAILS_REPO: "ror-app"
+    NGINX_REPO: "ror-nginx"
     PROJECT_NAME: "ror-app"
 
 phases:
