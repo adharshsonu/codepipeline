@@ -1,5 +1,5 @@
 
-FROM nginx
+FROM public.ecr.aws/nginx/nginx:latest
 WORKDIR /var/app
 COPY docker/nginx/default.conf /etc/nginx/conf.d/
 EXPOSE 80

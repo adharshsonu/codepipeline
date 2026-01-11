@@ -1,5 +1,5 @@
 # Use Ruby 2.6.7 (Debian Buster – EOL, so archive repo is needed)
-FROM ruby:2.6.7
+FROM public.ecr.aws/docker/library/ruby:2.6.7
 
 # Fix Debian archive repos, install dependencies + CA certificates
 RUN sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list && \
